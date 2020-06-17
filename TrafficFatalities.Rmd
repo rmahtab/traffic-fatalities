@@ -1,0 +1,82 @@
+---
+title: "USTraffic"
+author: "Ryan"
+date: "4/6/2019"
+output: html_document
+---
+
+```{r}
+# Read in data
+accidents2016 = read.csv("accident.csv")
+
+# Import libraries
+library(tidyverse)
+library(ggplot2)
+library(sp)
+library(ggmap)
+library(maps)
+```
+
+```{r}
+head(accidents2016)
+dim(accidents2016)
+```
+
+```{r}
+library(forcats)
+
+states_name <- fct_recode(as.factor(accidents2016$STATE), "Alabama" = "1", "Alaska" = "2", "Arizona" = "4", "Arkansas" = "5", "California" = "6", "Colorado" = "8", "Connecticut" = "9", "Delaware" = "10", "D.C." = "11", "Florida" = "12", "Georgia" = "13", "Hawaii" = "15", "Idaho" = "16", "Illinois" = "17", "Indiana" = "18", "Iowa" = "19", "Kansas" = "20", "Kentucky" = "21", "Louisiana" = "22", "Maine" = "23", "Maryland" = "24", "Massachusetts" = "25", "Michigan" = "26", "Minnesota" = "27", "Mississippi" = "28", "Missouri" = "29", "Montana" = "30", "Nebraska" = "31", "Nevada" = "32", "New Hampshire" = "33", "New Jersey" = "34", "New Mexico" = "35", "New York" = "36", "North Carolina" = "37", "North Dakota" = "38", "Ohio" = "39", "Oklahoma" = "40", "Oregon" = "41", "Pennsylvania" = "42", "Rhode Island" = "44", "South Carolina" = "45", "South Dakota" = "46", "Tennessee" = "47", "Texas" = "48", "Utah" = "49", "Vermont" = "50", "Virginia" = "51",  "Washington" = "53", "West Virginia" = "54", "Wisconsin" = "55", "Wyoming" = "56")
+
+accidents2016$name = states_name
+```
+
+
+```{r}
+#map <- get_map(location = 'United States', zoom = 4)
+US <- c(left = -128, bottom = 24, right = -65, top = 52)
+map <- get_stamenmap(US, zoom = 5, maptype = "terrain")
+
+accidents2016 <- accidents2016 %>% 
+  group_by(name) %>%
+  mutate(Count = n())
+
+#  Visualize the basic map
+ggmap(map) +
+  geom_point(aes(x = LONGITUD, y = LATITUDE, color = Count),
+             data = accidents2016, alpha = .5) +
+  scale_color_gradient(low = "white", high = "red") +
+  labs(title = "Accident Count by State", x = "Longitude",
+       y = "Latitude") +
+  theme_grey()
+```
+
+
+```{r}
+light_conds <- fct_recode(as.factor(accidents2016$LGT_COND), "Daylight" = "1", "Dark - Not Lighted" = "2",
+                          "Dark - Lighted" = "3", "Dawn" = "4", "Dusk" = "5", "Dark - Unknown" = "6",
+                          "Other" = "7", "Not Reported" = "8", "Unknown" = "9")
+
+accidents2016$LGT_COND = light_conds
+
+light_pie = ggplot(accidents2016,
+                                aes(x = factor(1), fill = as.factor(light_conds))) +
+  geom_bar() + coord_polar(theta = "y") +
+  labs(title = "Accidents Based on Light Condition") +
+  labs(fill = "Light Condition", x = "Count", y = "Proportion")
+
+light_pie
+```
+
+
+```{r}
+drunk_driver_prop <- ggplot(accidents2016,
+                            aes(x = name, fill = as.factor(DRUNK_DR))) +
+  geom_bar(position = "fill") +
+  labs(title = "Share of Accidents Caused by Drunk Driving by State",
+                    x = "State", y = "Proportion",
+       fill = "# of drunk drivers involved") +
+  theme(axis.text.x=element_text(angle = 90, size = 8))
+
+drunk_driver_prop
+```
+
